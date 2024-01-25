@@ -4,6 +4,8 @@
 #define ENTER '\n'
 #define BACKSPACE 127
 #define ESC 27
+#define UP 'A'
+#define DOWN 'B'
 #define RIGHT 'C'
 #define LEFT 'D'
 #define CLEAR "\33[2K"
@@ -63,13 +65,13 @@ char getch() {
     arrowState = 0;
     switch (wVirtualKeyCode) {
       case VK_UP:
-        return 'A';
+        return UP;
       case VK_DOWN:
-        return 'B';
+        return DOWN;
       case VK_LEFT:
-        return 'D';
+        return LEFT;
       case VK_RIGHT:
-        return 'C';
+        return RIGHT;
     }
   }
 
