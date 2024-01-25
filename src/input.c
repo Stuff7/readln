@@ -44,9 +44,55 @@ char getch() {
   return buf;
 }
 #elif defined(_WIN32) || defined(WIN32)
+#include <Windows.h>
+
+static int arrowState = 0;
+static WORD wVirtualKeyCode = 0;
+
 char getch() {
-  fprintf(stderr, "Implement getch for Windows\n");
-  exit(EXIT_FAILURE);
+  HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+  INPUT_RECORD irInputRecord;
+  DWORD dwEventsRead;
+
+  if (arrowState) {
+    if (arrowState == 1) {
+      arrowState++;
+      return '[';
+    }
+
+    arrowState = 0;
+    switch (wVirtualKeyCode) {
+      case VK_UP:
+        return 'A';
+      case VK_DOWN:
+        return 'B';
+      case VK_LEFT:
+        return 'D';
+      case VK_RIGHT:
+        return 'C';
+    }
+  }
+
+  while (ReadConsoleInputA(hStdin, &irInputRecord, 1, &dwEventsRead)) {
+    if (irInputRecord.EventType == KEY_EVENT && irInputRecord.Event.KeyEvent.bKeyDown) {
+      if (irInputRecord.Event.KeyEvent.uChar.AsciiChar != 0) {
+        switch (irInputRecord.Event.KeyEvent.uChar.AsciiChar) {
+          case VK_RETURN:
+            return ENTER;
+          case VK_BACK:
+            return BACKSPACE;
+        }
+
+        return irInputRecord.Event.KeyEvent.uChar.AsciiChar;
+      } else {
+        wVirtualKeyCode = irInputRecord.Event.KeyEvent.wVirtualKeyCode;
+        arrowState = 1;
+        return '\033';
+      }
+    }
+  }
+
+  return '\0';
 }
 #endif
 
