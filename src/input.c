@@ -115,7 +115,7 @@ void insertch(u8 *buf, usize *len, usize idx, u8 val) {
 }
 
 void removech(u8 *buf, usize *len, usize idx) {
-  if (!idx || !*len) {
+  if (!*len) {
     return;
   }
 
@@ -165,7 +165,10 @@ usize readln(u8 *buf, usize len) {
         break;
     }
 
-    printf("%s\r%s\r\033[%ldC", CLEAR, buf, pos);
+    printf("%s\r%s\r", CLEAR, buf);
+    if (pos) {
+      printf("\033[%ldC", pos);
+    }
   }
 
   return str_len;
