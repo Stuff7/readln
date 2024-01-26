@@ -194,6 +194,11 @@ usize readln(u8 buf[], usize len) {
     key = readKey(&ch);
 
     switch (key) {
+      case Char:
+        if (pos < len - 1) {
+          insertch(buf, &str_len, pos++, ch);
+        }
+        break;
       case Enter:
         printf("\n");
         return str_len;
@@ -227,11 +232,6 @@ usize readln(u8 buf[], usize len) {
         }
         break;
       case Special:
-        break;
-      default:
-        if (pos < len - 1) {
-          insertch(buf, &str_len, pos++, ch);
-        }
         break;
     }
 
