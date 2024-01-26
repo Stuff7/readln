@@ -7,7 +7,7 @@
 #define CLEAR "\33[2K"
 
 typedef enum {
-  None,
+  Special,
   Char,
   Enter,
   Backspace,
@@ -102,7 +102,7 @@ const Key readKey(u8 *ret) {
     pos++;
   }
 
-  return None;
+  return Special;
 }
 #elif defined(_WIN32) || defined(WIN32)
 #include <Windows.h>
@@ -226,7 +226,7 @@ usize readln(u8 buf[], usize len) {
           }
         }
         break;
-      case None:
+      case Special:
         break;
       default:
         if (pos < len - 1) {
