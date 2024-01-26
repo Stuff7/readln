@@ -10,6 +10,29 @@
 #define LEFT 'D'
 #define CLEAR "\33[2K"
 
+typedef enum {
+  None,
+  ArrowRight,
+  ArrowLeft,
+  CtrlArrowRight,
+  CtrlArrowLeft,
+} SpecialKey;
+
+#define ESC_SEQ_MAX_LEN 5
+typedef struct {
+  SpecialKey key;
+  u8 value[ESC_SEQ_MAX_LEN];
+  int len;
+} EscapeSequence;
+
+#define ESC_SEQ_LEN 6
+const static EscapeSequence escSeqList[ESC_SEQ_LEN] = {
+    {ArrowRight, "[C", 2},
+    {ArrowLeft, "[D", 2},
+    {CtrlArrowRight, "[1;5C", 5},
+    {CtrlArrowLeft, "[1;5D", 5},
+};
+
 #ifdef __unix__
 #include <termios.h>
 #include <unistd.h>
@@ -45,8 +68,34 @@ char getch() {
 
   return buf;
 }
+
+const SpecialKey escapeSequence() {
+  int pos = 0;
+  u8 ch;
+
+  while (pos < ESC_SEQ_MAX_LEN) {
+    ch = getch();
+
+    for (int i = 0; i < ESC_SEQ_LEN; i++) {
+      const EscapeSequence *seq = &escSeqList[i];
+
+      if (pos == seq->len) {
+        continue;
+      }
+
+      if (ch == seq->value[pos] && seq->len - 1 == pos) {
+        return seq->key;
+      }
+    }
+
+    pos++;
+  }
+
+  return None;
+}
 #elif defined(_WIN32) || defined(WIN32)
 #include <Windows.h>
+#include <stdlib.h>
 
 static int arrowState = 0;
 static WORD wVirtualKeyCode = 0;
@@ -96,15 +145,12 @@ char getch() {
 
   return '\0';
 }
-#endif
 
-const char handle_arrows() {
-  if (getch() == '[') {
-    return getch();
-  }
-
-  return 0;
+const SpecialKey escapeSequence() {
+  fprintf(stderr, "Implement escapeSequence for Windows\n");
+  exit(1);
 }
+#endif
 
 void insertch(u8 *buf, usize *len, usize idx, u8 val) {
   for (int i = *len; i > idx; i--) {
@@ -127,7 +173,7 @@ void removech(u8 *buf, usize *len, usize idx) {
   buf[*len] = 0;
 }
 
-usize readln(u8 *buf, usize len) {
+usize readln(u8 buf[], usize len) {
   char ch = 0;
   usize pos = 0;
   usize str_len = 0;
@@ -145,16 +191,32 @@ usize readln(u8 *buf, usize len) {
         }
         break;
       case ESC:
-        switch (handle_arrows()) {
-          case LEFT:
+        switch (escapeSequence()) {
+          case ArrowLeft:
             if (pos) {
               pos--;
             }
             break;
-          case RIGHT:
+          case ArrowRight:
             if (pos < str_len) {
               pos++;
             }
+            break;
+          case CtrlArrowLeft:
+            while (pos) {
+              if (buf[--pos] == ' ') {
+                break;
+              }
+            }
+            break;
+          case CtrlArrowRight:
+            while (pos < str_len) {
+              if (buf[++pos] == ' ') {
+                break;
+              }
+            }
+            break;
+          case None:
             break;
         }
         break;

@@ -1,14 +1,11 @@
 #include "input.h"
-#include <stdlib.h>
 
 #define BUF_LEN 256
 
 int main() {
-  u8 *buf = calloc(BUF_LEN, 1);
+  u8 buf[BUF_LEN];
   usize len = readln(buf, BUF_LEN);
-
   printf("Character count: %ld\nOutput: %s\n", len, buf);
-  free(buf);
 
   return 0;
 }
