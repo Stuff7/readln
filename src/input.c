@@ -4,23 +4,22 @@
 #define ENTER '\n'
 #define BACKSPACE 127
 #define ESC 27
-#define UP 'A'
-#define DOWN 'B'
-#define RIGHT 'C'
-#define LEFT 'D'
 #define CLEAR "\33[2K"
 
 typedef enum {
   None,
+  Char,
+  Enter,
+  Backspace,
   ArrowRight,
   ArrowLeft,
   CtrlArrowRight,
   CtrlArrowLeft,
-} SpecialKey;
+} Key;
 
 #define ESC_SEQ_MAX_LEN 5
 typedef struct {
-  SpecialKey key;
+  Key key;
   u8 value[ESC_SEQ_MAX_LEN];
   int len;
 } EscapeSequence;
@@ -69,10 +68,22 @@ char getch() {
   return buf;
 }
 
-const SpecialKey escapeSequence() {
-  int pos = 0;
-  u8 ch;
+const Key readKey(u8 *ret) {
+  u8 ch = getch();
 
+  switch (ch) {
+    case ESC:
+      break;
+    case '\n':
+      return Enter;
+    case 127:
+      return Backspace;
+    default:
+      *ret = ch;
+      return Char;
+  }
+
+  int pos = 0;
   while (pos < ESC_SEQ_MAX_LEN) {
     ch = getch();
 
@@ -174,51 +185,48 @@ void removech(u8 *buf, usize *len, usize idx) {
 }
 
 usize readln(u8 buf[], usize len) {
-  char ch = 0;
+  u8 ch = 0;
   usize pos = 0;
   usize str_len = 0;
+  Key key;
 
   while (1) {
-    ch = getch();
+    key = readKey(&ch);
 
-    switch (ch) {
-      case ENTER:
+    switch (key) {
+      case Enter:
         printf("\n");
         return str_len;
-      case BACKSPACE:
+      case Backspace:
         if (pos) {
           removech(buf, &str_len, --pos);
         }
         break;
-      case ESC:
-        switch (escapeSequence()) {
-          case ArrowLeft:
-            if (pos) {
-              pos--;
-            }
-            break;
-          case ArrowRight:
-            if (pos < str_len) {
-              pos++;
-            }
-            break;
-          case CtrlArrowLeft:
-            while (pos) {
-              if (buf[--pos] == ' ') {
-                break;
-              }
-            }
-            break;
-          case CtrlArrowRight:
-            while (pos < str_len) {
-              if (buf[++pos] == ' ') {
-                break;
-              }
-            }
-            break;
-          case None:
-            break;
+      case ArrowLeft:
+        if (pos) {
+          pos--;
         }
+        break;
+      case ArrowRight:
+        if (pos < str_len) {
+          pos++;
+        }
+        break;
+      case CtrlArrowLeft:
+        while (pos) {
+          if (buf[--pos] == ' ') {
+            break;
+          }
+        }
+        break;
+      case CtrlArrowRight:
+        while (pos < str_len) {
+          if (buf[++pos] == ' ') {
+            break;
+          }
+        }
+        break;
+      case None:
         break;
       default:
         if (pos < len - 1) {
